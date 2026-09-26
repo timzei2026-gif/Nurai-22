@@ -24,7 +24,8 @@
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html{scroll-behavior:smooth}
-  body{margin:0;min-height:100svh;color:#fff;font-family:'Comfortaa',system-ui,sans-serif;
+  html{overflow-x:hidden}
+  body{margin:0;min-height:100svh;overscroll-behavior-y:none;color:#fff;font-family:'Comfortaa',system-ui,sans-serif;
     background:linear-gradient(180deg,var(--night1) 0%,var(--night2) 45%,var(--night3) 100%);background-attachment:fixed;overflow-x:hidden}
   body.locked{overflow:hidden}
   .layer{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
@@ -37,7 +38,7 @@
   .i{width:1.25em;height:1.25em;vertical-align:-.28em;color:var(--gold);fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none;overflow:visible}
 
   /* ---------- INTRO / ENVELOPE ---------- */
-  #intro{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:46px;padding:24px;
+  #intro{position:fixed;inset:0;z-index:50;touch-action:none;overscroll-behavior:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:46px;padding:24px;
     background:radial-gradient(circle at 50% 42%,rgba(90,34,103,.45),rgba(12,6,32,.94));transition:opacity 1s ease, visibility 1s}
   #intro.gone{opacity:0;visibility:hidden}
   #intro.opening .intro-text,#intro.opening .intro-hint{animation:none;opacity:0;transition:opacity .5s ease}
@@ -86,7 +87,7 @@
   .rise{opacity:0}
   #main.show .rise{animation:fadeUp 1s cubic-bezier(.2,.8,.2,1) var(--dl,0s) both}
 
-  .hero{position:relative;text-align:center;min-height:86svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+  .hero{position:relative;overflow:hidden;margin:0 -16px;padding:0 16px;text-align:center;min-height:86svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
   .cloud{position:absolute;z-index:-1;width:260px;height:90px;border-radius:50%;pointer-events:none;opacity:.75;
     background:radial-gradient(closest-side,rgba(255,255,255,.32),rgba(255,255,255,0));filter:blur(14px)}
   .cloud.a{top:4%;left:-10%;animation:drift 52s linear infinite}
@@ -99,7 +100,8 @@
   .age-wrap::after{content:"22";position:absolute;left:0;top:3px;color:rgba(70,35,0,.55);pointer-events:none}
   .age-wrap .sp{position:absolute;color:var(--gold);font-size:16px;line-height:1;animation:twinkle 2.2s ease-in-out infinite;text-shadow:0 0 10px rgba(255,217,138,.8)}
   .age-wrap .a1{top:8px;left:-22px}.age-wrap .a2{bottom:14px;right:-24px;animation-delay:.9s;font-size:12px}.age-wrap .a3{top:-10px;right:-6px;animation-delay:1.6s;font-size:11px}
-  .moon{width:170px;height:170px;animation:float 7s ease-in-out infinite;filter:drop-shadow(0 0 34px rgba(255,220,150,.5))}
+  #main.show .moon.rise{animation:fadeUp 1s cubic-bezier(.2,.8,.2,1) .1s both, float 7s ease-in-out 1.1s infinite}
+  .moon{width:170px;height:170px;filter:drop-shadow(0 0 34px rgba(255,220,150,.5))}
   .moon .halo{transform-box:fill-box;transform-origin:center;animation:halo 5s ease-in-out infinite}
   .moon .halo.b{animation-delay:-2.5s}
   .spark{animation:twinkle 2.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
@@ -272,7 +274,7 @@
   @keyframes tap{0%{transform:translate(-50%,-50%) scale(.3);opacity:1}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1.3);opacity:0}}
 
   @media (prefers-reduced-motion:reduce){
-    *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+    *{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0s!important}
     .rise,.reveal,.name .ch,.paper .w{opacity:1;filter:none;transform:none}
   }
 </style>
@@ -637,6 +639,12 @@ document.documentElement.lang = 'ru';
       if (s.life <= 0) shooters.splice(i,1);
     }
     sctx.globalAlpha = 1;
+    for (let i = lanterns.length-1; i >= 0; i--){
+      const l = lanterns[i];
+      l.t += .016; l.y -= l.vy; l.x += l.vx + Math.sin(l.t*.9 + l.ph)*.35; l.s *= .9993;
+      if (l.y < -90){ lanterns.splice(i,1); continue; }
+      drawLantern(l, sctx);
+    }
   }
 
   /* ---- particles ---- */
@@ -672,7 +680,7 @@ document.documentElement.lang = 'ru';
       });
     }
   }
-  function drawLantern(l){
+  function drawLantern(l, fctx){
     fctx.save(); fctx.translate(l.x,l.y); fctx.scale(l.s,l.s);
     const fl = .85 + Math.sin(l.t*9 + l.ph)*.08 + Math.sin(l.t*23)*.04;
     let g = fctx.createRadialGradient(0,8,4,0,8,72);
@@ -691,12 +699,6 @@ document.documentElement.lang = 'ru';
   }
   function drawFx(){
     fctx.clearRect(0,0,W,H);
-    for (let i = lanterns.length-1; i >= 0; i--){
-      const l = lanterns[i];
-      l.t += .016; l.y -= l.vy; l.x += l.vx + Math.sin(l.t*.9 + l.ph)*.35; l.s *= .9993;
-      if (l.y < -90){ lanterns.splice(i,1); continue; }
-      drawLantern(l);
-    }
     for (let i = parts.length-1; i >= 0; i--){
       const p = parts[i];
       p.vx *= .985; p.vy = p.vy*.985 + p.g; p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.life -= p.d;
@@ -713,10 +715,10 @@ document.documentElement.lang = 'ru';
   }
   (function loop(t){
     frame++;
-    if (frame % 2 === 0) drawAurora(t || 0);
+    if (frame % 3 === 0) drawAurora(t || 0);
     drawSky();
     if (started && nameW) nameEl.style.setProperty('--sh', (((t || 0)/9000) % 1)*nameW + 'px');
-    if (parts.length || lanterns.length || frame % 30 === 0) drawFx();
+    if (parts.length || frame % 30 === 0) drawFx();
     requestAnimationFrame(loop);
   })(0);
 
@@ -768,7 +770,7 @@ document.documentElement.lang = 'ru';
   let musicOn = false, resumeOnShow = false;
   try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch(_){}
   function setBtn(on){
-    musicBtn.classList.add('show'); musicBtn.classList.toggle('on', on); musicBtn.classList.toggle('off', !on);
+    musicBtn.classList.toggle('on', on); musicBtn.classList.toggle('off', !on);
     musicBtn.setAttribute('aria-label', on ? 'Выключить музыку' : 'Включить музыку');
   }
   function startMusic(){
@@ -819,7 +821,9 @@ document.documentElement.lang = 'ru';
       env.classList.add('dissolve'); flash.classList.add('on');
     }, 2900);
     setTimeout(() => {
+      try { scrollTo({top:0, left:0, behavior:'instant'}); } catch(_){ scrollTo(0,0); }
       intro.classList.add('gone'); main.classList.add('show'); document.body.classList.remove('locked');
+      musicBtn.classList.add('show');
       started = true; layoutName();
       rain(140);
       if (!reduced) document.querySelectorAll('.name .ch').forEach((ch,i) => setTimeout(() => {
